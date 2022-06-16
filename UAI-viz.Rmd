@@ -1,0 +1,719 @@
+---
+title: "UAI Visualisations"
+author: "Gayathri Anil"
+date: "Built on: `r format(Sys.Date(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: show
+    df_print: paged
+    toc: true
+    toc_float: true
+    toc_depth: 4
+  html_notebook:
+    toc: true
+    toc_float: yes  
+---
+
+# Experiments
+
+* **Setups:** 1, 2, 3
+* **Communication costs:** 0, -0.05, -0.1, -0.2, -0.5, -1
+* **Trajectories:** 1000
+* **Reasoning types:** IPOMCP-PF, IPOMCP-PF-Comm
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(purrr)
+
+setup_list <- c(1, 2, 3)
+traj_list <- c(200, 500, 1000)
+cost_name_list <- c(0:5)
+cost_list <- c(0, 0.05, 0.1, 0.2, 0.5, 1)
+runs <- 1:50
+
+agg_summary <- read.csv("summary.csv", stringsAsFactors = F)
+if (!file.exists("./uai-viz")){
+  dir.create(file.path("./uai-viz"))
+}
+
+```
+
+# Rewards  {.tabset} 
+
+
+<!-- ```{r echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.width=10} -->
+
+<!-- df <-  -->
+<!--   agg_summary %>%  -->
+<!--   dplyr::filter(Trajectory == 1000) %>%  -->
+<!--   dplyr::mutate(Setup = as.integer(Setup / 100)) -->
+<!-- df[df$Reasoning == "IPOMCPPF-0e-1l", "Comm_cost"] <- "I-POMCP-PF" -->
+<!-- df[df$Comm_cost == 0, "Comm_cost"] <- "CI-POMCP-PF (0 message cost)" -->
+<!-- df[df$Comm_cost == -0.05, "Comm_cost"] <- "CI-POMCP-PF (-0.05 message cost)" -->
+<!-- df[df$Comm_cost == -0.1, "Comm_cost"] <- "CI-POMCP-PF (-0.1 message cost)" -->
+<!-- df[df$Comm_cost == -0.2, "Comm_cost"] <- "CI-POMCP-PF (-0.2 message cost)" -->
+<!-- df[df$Comm_cost == -0.5, "Comm_cost"] <- "CI-POMCP-PF (-0.5 message cost)" -->
+<!-- df[df$Comm_cost == -1, "Comm_cost"] <- "CI-POMCP-PF (-1.0 message cost)" -->
+
+<!-- ggplot(df,  -->
+<!--        aes(x=factor(Setup, levels = c(1, 2, 3)),  -->
+<!--            y=Reward,  -->
+<!--            fill=factor(Comm_cost,  -->
+<!--                        levels = c("I-POMCP-PF",  -->
+<!--                                   "CI-POMCP-PF (0 message cost)",  -->
+<!--                                   "CI-POMCP-PF (-0.05 message cost)",  -->
+<!--                                   "CI-POMCP-PF (-0.1 message cost)",  -->
+<!--                                   "CI-POMCP-PF (-0.2 message cost)",  -->
+<!--                                   "CI-POMCP-PF (-0.5 message cost)",  -->
+<!--                                   "CI-POMCP-PF (-1.0 message cost)")))) +  -->
+<!--   geom_bar(position="dodge", stat="identity") + -->
+<!--   theme_gray() + -->
+<!--   xlab("Setup") + -->
+<!--   guides(fill=guide_legend(title="")) + -->
+<!--   # scale_fill_brewer(palette="RdBu") + -->
+<!--   ggtitle("Average Rewards Earned by Agents") + -->
+<!--   geom_errorbar(aes(ymin=Reward-Reward_CI, ymax=Reward+Reward_CI), width=.1, -->
+<!--                 position=position_dodge(.9)) + -->
+<!--   theme(legend.position="top",  -->
+<!--         legend.text=element_text(size=18), -->
+<!--         axis.text=element_text(size=14), -->
+<!--         axis.title=element_text(size=16), -->
+<!--         plot.title = element_text(size= 18,face="bold", hjust = 0.5)) + -->
+<!--   guides(fill=guide_legend(title = "", nrow=4,byrow=TRUE)) + -->
+<!--   scale_fill_manual(values = c("#5F9EA0", "#FFDB00", "#F8BA09",  -->
+<!--                                "#F19A11", "#E9791A", "#E25822", "#C42727"))  -->
+
+<!-- ggsave("./uai-viz/rewards_v1.png") -->
+
+<!-- ``` -->
+
+<!-- # Messages  -->
+
+<!-- ```{r echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.width=10} -->
+<!-- dff <- data.frame() -->
+<!-- for (setup in setup_list){ -->
+<!--   for (cost in cost_name_list){ -->
+<!--     traj <- 1000 -->
+<!--     for (r in runs){ -->
+<!--       fname <- paste0("./Wildfire_AMOR_IPOMCPPFComm-0e-1l_Setup", paste0(setup, "0", cost), -->
+<!--                       "_Traj", traj, "_Run", r, ".csv") -->
+<!--       if (file.exists(fname)){ -->
+<!--         df <- read.csv(fname) %>%  -->
+<!--           dplyr::mutate(Setup = setup,  -->
+<!--                         traj = traj,  -->
+<!--                         comm_cost = paste0("CI-POMCP-PF (", -1*cost_list[cost+1], " message cost)"), -->
+<!--                         Run = r) -->
+<!--         dff <- rbind(dff, df) -->
+<!--       } -->
+<!--     } -->
+<!--   } -->
+<!-- } -->
+<!-- dff[dff$comm_cost == "CI-POMCP-PF (-1 message cost)", "comm_cost"] <- "CI-POMCP-PF (-1.0 message cost)" -->
+
+<!-- df <-  -->
+<!--   dff %>%  -->
+<!--   dplyr::filter(Message != -1) %>% -->
+<!--   dplyr::group_by(Setup, comm_cost, Run) %>%  -->
+<!--   dplyr::summarise(m = n()) %>%  -->
+<!--   dplyr::group_by(Setup, comm_cost) %>%  -->
+<!--   dplyr::summarise(Messages = mean(m),  -->
+<!--                    sd = stats::sd(m), -->
+<!--                    n = n()) %>%  -->
+<!--   dplyr::mutate(se = sd / sqrt(n), -->
+<!--                 lower.ci = Messages - qt(0.975, n - 1) * se, -->
+<!--                 upper.ci = Messages + qt(0.975, n - 1) * se) -->
+
+<!-- ggplot(df,  -->
+<!--        aes(x=factor(Setup, levels = c(1, 2, 3)),  -->
+<!--            y=Messages,  -->
+<!--            fill=factor(comm_cost,  -->
+<!--                        levels = c("I-POMCP-PF",  -->
+<!--                                   "CI-POMCP-PF (0 message cost)",  -->
+<!--                                   "CI-POMCP-PF (-0.05 message cost)",  -->
+<!--                                   "CI-POMCP-PF (-0.1 message cost)",  -->
+<!--                                   "CI-POMCP-PF (-0.2 message cost)",  -->
+<!--                                   "CI-POMCP-PF (-0.5 message cost)",  -->
+<!--                                   "CI-POMCP-PF (-1.0 message cost)")))) +  -->
+<!--   geom_bar(position="dodge", stat="identity") + -->
+<!--   theme_gray() + -->
+<!--   xlab("Setup") + -->
+<!--   guides(fill=guide_legend(title="")) + -->
+<!--   # scale_fill_brewer(palette="RdBu") + -->
+<!--   ggtitle("Average Number of Messages Sent by Agents") + -->
+<!--   geom_errorbar(aes(ymin=lower.ci, ymax=upper.ci), width=.2, -->
+<!--                 position=position_dodge(.9)) + -->
+<!--   theme(legend.position="top",  -->
+<!--         legend.text=element_text(size=18), -->
+<!--         axis.text=element_text(size=14), -->
+<!--         axis.title=element_text(size=16), -->
+<!--         plot.title = element_text(size= 18,face="bold", hjust = 0.5)) + -->
+<!--   guides(fill=guide_legend(title = "", nrow=3,byrow=TRUE)) + -->
+<!--   scale_fill_manual(values = c("#FFDB00", "#F8BA09",  -->
+<!--                                "#F19A11", "#E9791A", "#E25822", "#C42727")) -->
+<!-- ggsave("./uai-viz/messages_v1.png") -->
+
+<!-- ``` -->
+
+
+# Actions across time
+
+## IPOMCP-PF {.tabset}
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.height=10}
+cost <- 0
+
+for(setup in setup_list) {
+  
+  cat('\n\n')
+  cat("### ",setup,"{.tabset}", "\n")
+  cat('\n\n')
+  
+  
+  # for (cost in cost_name_list){
+  cat('\n\n')
+  cat("#### ",cost_list[cost+1],"{.tabset}", "\n")
+  cat('\n\n')
+  for (traj in c(1000)){
+    cat('\n\n')
+    cat("##### ",traj,"<br>", "\n")
+    cat('\n\n')
+    
+    df <- runs %>%
+      purrr::map(~{
+        r <- .
+        amor_f <- paste0("./Wildfire_AOR_IPOMCPPF-0e-1l_Setup", paste0(setup, "0", cost),
+                         "_Traj", traj, "_Run", r, ".csv")
+        state_f <- paste0("./Wildfire_States_IPOMCPPFComm-0e-1l_Setup", paste0(setup, "0", cost),
+                          "_Traj", traj, "_Run", r, ".csv")
+        if (file.exists(amor_f) & file.exists(state_f)){
+          amor <- read.csv(amor_f)
+          state <- read.csv(state_f)
+          
+          
+          if (setup == 1){
+            mer <- merge(state, amor, by = c("Step")) %>%
+              tidyr::unite(State, c(f0, f1, f2, s0, s1), remove = FALSE)
+            insights <-
+              mer %>%
+              dplyr::filter(Agent == 0) %>%
+              dplyr::select(Step, Agent, State, Actual = s0 ,
+                            Observation, Reward, Action) %>%
+              dplyr::bind_rows(mer %>%
+                                 dplyr::filter(Agent == 1) %>%
+                                 dplyr::select(Step, Agent, State, Actual = s1 ,
+                                               Observation, Reward, Action))
+          } else if(setup == 2) {
+            mer <- merge(state, amor, by = c("Step")) %>%
+              tidyr::unite(State, c(f0, f1, f2, s0, s1, s2), remove = FALSE)
+            insights <-
+              mer %>%
+              dplyr::filter(Agent == 0) %>%
+              dplyr::select(Step, Agent, State, Actual = s0 ,
+                            Observation, Reward, Action) %>%
+              dplyr::bind_rows(mer %>%
+                                 dplyr::filter(Agent == 1) %>%
+                                 dplyr::select(Step, Agent, State, Actual = s1 ,
+                                               Observation, Reward, Action)) %>%
+              dplyr::bind_rows(mer %>%
+                                 dplyr::filter(Agent == 2) %>%
+                                 dplyr::select(Step, Agent, State, Actual = s2 ,
+                                               Observation, Reward, Action))
+            
+          } else if(setup == 3) {
+            mer <- merge(state, amor, by = c("Step")) %>%
+              tidyr::unite(State, c(f0, f1, f2, s0, s1, s2, s3), remove = FALSE)
+            insights <-
+              mer %>%
+              dplyr::filter(Agent == 0) %>%
+              dplyr::select(Step, Agent, State, Actual = s0 ,
+                            Observation, Reward, Action) %>%
+              dplyr::bind_rows(mer %>%
+                                 dplyr::filter(Agent == 1) %>%
+                                 dplyr::select(Step, Agent, State, Actual = s1 ,
+                                               Observation, Reward, Action)) %>%
+              dplyr::bind_rows(mer %>%
+                                 dplyr::filter(Agent == 2) %>%
+                                 dplyr::select(Step, Agent, State, Actual = s2 ,
+                                               Observation, Reward, Action)) %>%
+              dplyr::bind_rows(mer %>%
+                                 dplyr::filter(Agent == 3) %>%
+                                 dplyr::select(Step, Agent, State, Actual = s3 ,
+                                               Observation, Reward, Action))
+            
+          }
+          
+          insights <-
+            insights %>%
+            dplyr::mutate(run = r,
+                          setup = paste0(setup, "0", cost),
+                          traj = traj,
+                          comm_cost = -1*cost_list[cost+1]) %>%
+            dplyr::select(run, tidyr::everything())
+          
+          return(insights)
+        }
+      }) %>% dplyr::bind_rows()
+    
+    if(nrow(df)!=0){
+      
+      comm_res <-
+        df %>%
+        dplyr::group_by(Agent, Step, Action) %>%
+        dplyr::summarise(PercentOfRuns = n()) %>%
+        dplyr::rowwise() %>%
+        dplyr::mutate(Action = paste0("Action ", Action)) %>%
+        dplyr::rowwise() %>%
+        dplyr::mutate(Agent = paste0("Agent ", Agent))
+      
+      print(ggplot(comm_res, aes(fill=factor(Action), y=PercentOfRuns, x=Step)) +
+              geom_bar(position="fill", stat="identity") +
+              #geom_text(aes(label=after_stat('count')), stat='count', position='fill') +
+              guides(fill=guide_legend(title="Action")) +
+              xlab("Time step") +
+              ylab("% Runs where Action was taken by agent") +
+              facet_wrap(~Agent, ncol = 1) +
+              ggtitle(paste0("Actions across Time for I-POMCP-PF - Setup ", setup))+
+              theme_gray()+
+              theme(legend.position="top", 
+                    legend.text=element_text(size=18),
+                    axis.text=element_text(size=14),
+                    axis.title=element_text(size=16),
+                    plot.title = element_text(size= 17,face="bold", hjust = 0.5)) +
+              guides(fill=guide_legend(title = "", nrow=1,byrow=TRUE)) +
+              scale_fill_manual(values = c("#FFDB00", "#F8BA09",
+                                           "#F19A11", "#E9791A", "#E25822", "#C42727")))
+      ggsave(paste0("./uai-viz/IPOMCPPF-actions_time-", setup, "-v1.png"))
+      
+      print(ggplot(comm_res, aes(fill=factor(Action), y=PercentOfRuns, x=Step)) +
+              geom_bar(position="fill", stat="identity") +
+              #geom_text(aes(label=after_stat('count')), stat='count', position='fill') +
+              guides(fill=guide_legend(title="Action")) +
+              xlab("Time step") +
+              ylab("% Runs where Action was taken by agent") +
+              facet_wrap(~Agent, ncol = 1) +
+              ggtitle(paste0("Actions across Time for I-POMCP-PF - Setup ", setup))+
+              theme_gray()+
+              theme(legend.position="top", 
+                    legend.text=element_text(size=18),
+                    axis.text=element_text(size=14),
+                    axis.title=element_text(size=16),
+                    plot.title = element_text(size= 17,face="bold", hjust = 0.5)) +
+              guides(fill=guide_legend(title = "", nrow=1,byrow=TRUE)) )
+      ggsave(paste0("./uai-viz/IPOMCPPF-actions_time-v2.png"))
+    }
+    
+    
+    cat('\n\n')
+    
+  }
+  cat('\n\n')
+  # }
+  
+  cat('\n\n')
+  
+}
+```
+
+
+## IPOMCP-PF-Comm {.tabset}
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.height=10}
+
+for(setup in setup_list) {
+  
+  cat('\n\n')
+  cat("### ",setup,"{.tabset}", "\n")
+  cat('\n\n')
+  
+  for (cost in c(0, 5)){
+    cat('\n\n')
+    cat("#### ",cost,"{.tabset}", "\n")
+    cat('\n\n')
+    for (traj in c(1000)){
+      cat('\n\n')
+      cat("##### ",traj,"<br>", "\n")
+      cat('\n\n')
+      
+      df <- runs %>%
+        purrr::map(~{
+          r <- .
+          amor_f <- paste0("./Wildfire_AMOR_IPOMCPPFComm-0e-1l_Setup", paste0(setup, "0", cost),
+                           "_Traj", traj, "_Run", r, ".csv")
+          state_f <- paste0("./Wildfire_States_IPOMCPPFComm-0e-1l_Setup", paste0(setup, "0", cost),
+                            "_Traj", traj, "_Run", r, ".csv")
+          if (file.exists(amor_f) & file.exists(state_f)){
+            amor <- read.csv(amor_f)
+            state <- read.csv(state_f)
+            
+            
+            if (setup == 1){
+              mer <- merge(state, amor, by = c("Step")) %>%
+                tidyr::unite(State, c(f0, f1, f2, s0, s1), remove = FALSE)
+              insights <-
+                mer %>%
+                dplyr::filter(Agent == 0) %>%
+                dplyr::select(Step, Agent, State, Actual = s0 , Projected = Message, Observation, Reward, Action) %>%
+                dplyr::bind_rows(mer %>%
+                                   dplyr::filter(Agent == 1) %>%
+                                   dplyr::select(Step, Agent, State, Actual = s1 ,
+                                                 Projected = Message, Observation, Reward, Action))
+            } else if(setup == 2) {
+              mer <- merge(state, amor, by = c("Step")) %>%
+                tidyr::unite(State, c(f0, f1, f2, s0, s1, s2), remove = FALSE)
+              insights <-
+                mer %>%
+                dplyr::filter(Agent == 0) %>%
+                dplyr::select(Step, Agent, State, Actual = s0 , Projected = Message, Observation, Reward, Action) %>%
+                dplyr::bind_rows(mer %>%
+                                   dplyr::filter(Agent == 1) %>%
+                                   dplyr::select(Step, Agent, State, Actual = s1 ,
+                                                 Projected = Message, Observation, Reward, Action)) %>%
+                dplyr::bind_rows(mer %>%
+                                   dplyr::filter(Agent == 2) %>%
+                                   dplyr::select(Step, Agent, State, Actual = s2 ,
+                                                 Projected = Message, Observation, Reward, Action))
+              
+            } else if(setup == 3) {
+              mer <- merge(state, amor, by = c("Step")) %>%
+                tidyr::unite(State, c(f0, f1, f2, s0, s1, s2, s3), remove = FALSE)
+              insights <-
+                mer %>%
+                dplyr::filter(Agent == 0) %>%
+                dplyr::select(Step, Agent, State, Actual = s0 ,
+                              Projected = Message, Observation, Reward, Action) %>%
+                dplyr::bind_rows(mer %>%
+                                   dplyr::filter(Agent == 1) %>%
+                                   dplyr::select(Step, Agent, State, Actual = s1 ,
+                                                 Projected = Message, Observation, Reward, Action)) %>%
+                dplyr::bind_rows(mer %>%
+                                   dplyr::filter(Agent == 2) %>%
+                                   dplyr::select(Step, Agent, State, Actual = s2 ,
+                                                 Projected = Message, Observation, Reward, Action)) %>%
+                dplyr::bind_rows(mer %>%
+                                   dplyr::filter(Agent == 3) %>%
+                                   dplyr::select(Step, Agent, State, Actual = s3 ,
+                                                 Projected = Message, Observation, Reward, Action))
+              
+            }
+            
+            insights <-
+              insights %>%
+              dplyr::mutate(Comm_nature = ifelse(Projected == -1,
+                                                 "no communication",
+                                                 ifelse(Actual == Projected,
+                                                        "honest",
+                                                        "dishonest")),
+                            run = r,
+                            setup = paste0(setup, "0", cost),
+                            traj = traj,
+                            comm_cost = -1*cost_list[cost+1]) %>%
+              dplyr::select(run, tidyr::everything()) %>%
+              mutate(Next_Action=lead(Action))
+            
+            return(insights)
+          }
+        }) %>% dplyr::bind_rows()
+      
+      if(nrow(df)!=0){
+        
+        comm_res <-
+          df %>%
+          dplyr::group_by(Agent, Step, Action) %>%
+          dplyr::summarise(PercentOfRuns = n()) %>%
+          dplyr::rowwise() %>%
+          dplyr::mutate(Action = paste0("Action ", Action)) %>%
+          dplyr::rowwise() %>%
+          dplyr::mutate(Agent = paste0("Agent ", Agent))
+        
+        print(ggplot(comm_res, aes(fill=factor(Action), y=PercentOfRuns, x=Step)) +
+                geom_bar(position="fill", stat="identity") +
+                #geom_text(aes(label=after_stat('count')), stat='count', position='fill') +
+                guides(fill=guide_legend(title="Action")) +
+                xlab("Time step") +
+                ylab("% Runs where Action was taken by agent") +
+                facet_wrap(~Agent, ncol = 1) +
+                ggtitle(paste0("Actions across Time for CI-POMCP-PF - Setup ", setup))+
+                theme_gray()+
+                theme(legend.position="top", 
+                      legend.text=element_text(size=18),
+                      axis.text=element_text(size=14),
+                      axis.title=element_text(size=16),
+                      plot.title = element_text(size= 17,face="bold", hjust = 0.5)) +
+                guides(fill=guide_legend(title = "", nrow=1,byrow=TRUE)) +
+                scale_fill_manual(values = c("#FFDB00", "#F8BA09",
+                                             "#F19A11", "#E9791A", "#E25822", "#C42727")))
+        ggsave(paste0("./uai-viz/CIPOMCPPF-actions_time-", setup, "-", cost, "-v1.png"))
+        
+        print(ggplot(comm_res, aes(fill=factor(Action), y=PercentOfRuns, x=Step)) +
+                geom_bar(position="fill", stat="identity") +
+                #geom_text(aes(label=after_stat('count')), stat='count', position='fill') +
+                guides(fill=guide_legend(title="Action")) +
+                xlab("Time step") +
+                ylab("% Runs where Action was taken by agent") +
+                facet_wrap(~Agent, ncol = 1) +
+                ggtitle(paste0("Actions across Time for CI-POMCP-PF - Setup ", setup))+
+                theme_gray()+
+                theme(legend.position="top", 
+                      legend.text=element_text(size=18),
+                      axis.text=element_text(size=14),
+                      axis.title=element_text(size=16),
+                      plot.title = element_text(size= 17,face="bold", hjust = 0.5)) +
+                guides(fill=guide_legend(title = "", nrow=1,byrow=TRUE)))
+        ggsave(paste0("./uai-viz/CIPOMCPPF-actions_time-", setup, "-", cost, "-v2.png"))
+      }
+      
+      
+      cat('\n\n')
+      
+    }
+    cat('\n\n')
+  }
+  
+  cat('\n\n')
+  
+}
+```
+
+# Messages across time {.tabset}
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.height=10}
+
+for(setup in setup_list) {
+  
+  cat('\n\n')
+  cat("## ",setup,"{.tabset}", "\n")
+  cat('\n\n')
+  
+  
+  for (cost in c(0, 5)){
+    cat('\n\n')
+    cat("### ",cost_list[cost+1],"{.tabset}", "\n")
+    cat('\n\n')
+    for (traj in c(1000)){
+      cat('\n\n')
+      cat("#### ",traj,"<br>", "\n")
+      cat('\n\n')
+      
+      df <- runs %>%
+        purrr::map(~{
+          r <- .
+          amor_f <- paste0("./Wildfire_AMOR_IPOMCPPFComm-0e-1l_Setup", paste0(setup, "0", cost),
+                           "_Traj", traj, "_Run", r, ".csv")
+          state_f <- paste0("./Wildfire_States_IPOMCPPFComm-0e-1l_Setup", paste0(setup, "0", cost),
+                            "_Traj", traj, "_Run", r, ".csv")
+          if (file.exists(amor_f) & file.exists(state_f)){
+            amor <- read.csv(amor_f)
+            state <- read.csv(state_f)
+            
+            insights <- data.frame()
+            
+            if (setup == 1){
+              mer <- merge(state, amor, by = c("Step")) %>%
+                tidyr::unite(State, c(f0, f1, f2, s0, s1), remove = FALSE)
+              insights <-
+                mer %>%
+                dplyr::filter(Agent == 0) %>%
+                dplyr::select(Step, Agent, State, Actual = s0 , Projected = Message, Observation, Reward, Action) %>%
+                dplyr::bind_rows(mer %>%
+                                   dplyr::filter(Agent == 1) %>%
+                                   dplyr::select(Step, Agent, State, Actual = s1 ,
+                                                 Projected = Message, Observation, Reward, Action))
+            } else if(setup == 2){
+              mer <- merge(state, amor, by = c("Step")) %>%
+                tidyr::unite(State, c(f0, f1, f2, s0, s1, s2), remove = FALSE)
+              insights <-
+                mer %>%
+                dplyr::filter(Agent == 0) %>%
+                dplyr::select(Step, Agent, State, Actual = s0 , Projected = Message, Observation, Reward, Action) %>%
+                dplyr::bind_rows(mer %>%
+                                   dplyr::filter(Agent == 1) %>%
+                                   dplyr::select(Step, Agent, State, Actual = s1 ,
+                                                 Projected = Message, Observation, Reward, Action)) %>%
+                dplyr::bind_rows(mer %>%
+                                   dplyr::filter(Agent == 2) %>%
+                                   dplyr::select(Step, Agent, State, Actual = s2 ,
+                                                 Projected = Message, Observation, Reward, Action))
+              
+            } else if(setup == 3) {
+              mer <- merge(state, amor, by = c("Step")) %>%
+                tidyr::unite(State, c(f0, f1, f2, s0, s1, s2, s3), remove = FALSE)
+              insights <-
+                mer %>%
+                dplyr::filter(Agent == 0) %>%
+                dplyr::select(Step, Agent, State, Actual = s0 ,
+                              Projected = Message, Observation, Reward, Action) %>%
+                dplyr::bind_rows(mer %>%
+                                   dplyr::filter(Agent == 1) %>%
+                                   dplyr::select(Step, Agent, State, Actual = s1 ,
+                                                 Projected = Message, Observation, Reward, Action)) %>%
+                dplyr::bind_rows(mer %>%
+                                   dplyr::filter(Agent == 2) %>%
+                                   dplyr::select(Step, Agent, State, Actual = s2 ,
+                                                 Projected = Message, Observation, Reward, Action)) %>%
+                dplyr::bind_rows(mer %>%
+                                   dplyr::filter(Agent == 3) %>%
+                                   dplyr::select(Step, Agent, State, Actual = s3 ,
+                                                 Projected = Message, Observation, Reward, Action))
+              
+            }
+            
+            if (nrow(insights) != 0){
+              insights <-
+                insights %>%
+                dplyr::mutate(Comm_nature = ifelse(Projected == -1,
+                                                   "no communication",
+                                                   ifelse(Actual == Projected,
+                                                          "honest",
+                                                          "dishonest")),
+                              run = r,
+                              setup = paste0(setup, "0", cost),
+                              traj = traj,
+                              comm_cost = -1*cost_list[cost+1]) %>%
+                dplyr::select(run, tidyr::everything()) %>%
+                mutate(Next_Action=lead(Action))
+              
+              return(insights)
+            }
+          }
+        }) %>% dplyr::bind_rows()
+      
+      if(nrow(df)!=0){
+        
+        df$Actual <-
+          df$Actual %>%
+          gsub(0,"Empty", .) %>%
+          gsub(1, "Half", .) %>%
+          gsub(2, "Full", .) %>%
+          factor(levels = c("Full", "Half", "Empty"))
+        
+        df$Projected <-
+          df$Projected %>%
+          gsub(0,"Empty", .) %>%
+          gsub(-1, "No message", .) %>%
+          gsub(1, "Half", .) %>%
+          gsub(2, "Full", .) %>%
+          factor(levels = c("Full", "Half", "Empty", "No message"))
+        
+        comm_res <-
+          df %>%
+          dplyr::group_by(Agent, Step, Projected) %>%
+          dplyr::summarise(PercentOfRuns = n()) %>%
+          dplyr::rowwise() %>%
+          dplyr::mutate(Agent = paste0("Agent ", Agent))
+        
+        print(ggplot(comm_res, aes(fill=Projected, y=PercentOfRuns, x=Step)) +
+                geom_bar(position="fill", stat="identity") +
+                #geom_text(aes(label=after_stat('count')), stat='count', position='fill') +
+                guides(fill=guide_legend(title="Message")) +
+                xlab("Time step") +
+                ylab("% Runs where Message was Sent by Agent") +
+                facet_wrap(~Agent, ncol = 1) +
+                ggtitle(paste0("Messages Sent across Time for CI-POMCP-PF - Setup ", setup))+
+                theme_gray()+
+                theme(legend.position="top", 
+                      legend.text=element_text(size=18),
+                      axis.text=element_text(size=14),
+                      axis.title=element_text(size=16),
+                      plot.title = element_text(size= 17,face="bold", hjust = 0.5)) +
+                scale_fill_manual(values = c("#FFDB00", "#F8BA09",
+                                             "#F19A11", "#E9791A", "#E25822", "#C42727")))
+        ggsave(paste0("./uai-viz/CIPOMCPPF-messages_time-", setup, "-", cost, "-v1.png"))
+        
+        print(ggplot(comm_res, aes(fill=Projected, y=PercentOfRuns, x=Step)) +
+                geom_bar(position="fill", stat="identity") +
+                #geom_text(aes(label=after_stat('count')), stat='count', position='fill') +
+                guides(fill=guide_legend(title="Message")) +
+                xlab("Time step") +
+                ylab("% Runs where Message was Sent by Agent") +
+                facet_wrap(~Agent, ncol = 1) +
+                ggtitle(paste0("Messages Sent across Time for CI-POMCP-PF - Setup ", setup))+
+                theme_gray()+
+                theme(legend.position="top", 
+                      legend.text=element_text(size=18),
+                      axis.text=element_text(size=14),
+                      axis.title=element_text(size=16),
+                      plot.title = element_text(size= 17,face="bold", hjust = 0.5)) +
+                guides(fill=guide_legend(title = "", nrow=1,byrow=TRUE)))
+        ggsave(paste0("./uai-viz/CIPOMCPPF-messages_time-", setup, "-", cost, "-v2.png"))
+      }
+      
+      
+      cat('\n\n')
+      
+    }
+    cat('\n\n')
+  }
+  cat('\n\n')
+  
+}
+```
+
+<!-- # Comm_cost vs Type of message  {.tabset} -->
+
+<!-- ```{r echo=FALSE, message=FALSE, warning=FALSE, results='asis', fig.height=10} -->
+<!-- for(setup in setup_list) { -->
+
+<!--   cat('\n\n') -->
+<!--   cat("## ",setup,"{.tabset}", "\n") -->
+<!--   cat('\n\n') -->
+
+<!--   for (traj in traj_list){ -->
+<!--     cat('\n\n') -->
+<!--     cat("### ",traj,"<br>", "\n") -->
+<!--     cat('\n\n') -->
+<!--     dff <- data.frame() -->
+<!--     for (cost in cost_name_list){ -->
+<!--       df <- runs %>% -->
+<!--         purrr::map(~{ -->
+<!--           r <- . -->
+<!--           fname <- paste0("./Wildfire_AMOR_IPOMCPPFComm-0e-1l_Setup", paste0(setup, "0", cost), -->
+<!--                           "_Traj", traj, "_Run", r, ".csv") -->
+<!--           if (file.exists(fname)){ -->
+<!--             df <- read.csv(fname) %>% -->
+<!--               dplyr::mutate(setup = paste0(setup, "0", cost), -->
+<!--                             traj = traj, -->
+<!--                             comm_cost = -1*cost_list[cost+1], -->
+<!--                             run = r) -->
+<!--             return(df) -->
+<!--           } -->
+<!--         }) %>% dplyr::bind_rows() -->
+<!--       dff <<- dplyr::bind_rows(dff, df) -->
+<!--     } -->
+<!--     if(nrow(dff)!=0){ -->
+
+<!--       mer <- dff %>% -->
+<!--         # dplyr::filter(Message != -1) %>% -->
+<!--         dplyr::group_by(comm_cost, Message) %>% -->
+<!--         dplyr::summarise(MessagesSent = n()) -->
+<!--       print(mer) -->
+
+<!--       mer$Message <- -->
+<!--         mer$Message %>% -->
+<!--         gsub(-1, "No Message", .) %>% -->
+<!--         gsub(0, "Empty", .) %>% -->
+<!--         gsub(1, "Half", .) %>% -->
+<!--         gsub(2, "Full", .) %>% -->
+<!--         factor(levels = c("Full", "Half", "Empty", "No Message")) -->
+
+
+
+<!--       print(ggplot() + -->
+<!--               geom_bar(data = mer, aes(x = factor(comm_cost, levels = -1*cost_list), -->
+<!--                                        y = MessagesSent, fill = Message), -->
+<!--                        position = "fill", stat = "identity") + -->
+<!--               facet_wrap(~Agent, ncol = 1) + -->
+<!--               xlab("Communication cost") + -->
+<!--               guides(fill=guide_legend(title="Message")) + -->
+<!--               ggtitle(paste0(setup, "-", cost, "-", traj))) -->
+<!--     } -->
+
+<!--     cat('\n\n') -->
+
+<!--   } -->
+
+<!--   cat('\n\n') -->
+
+<!-- } -->
+<!-- ``` -->
